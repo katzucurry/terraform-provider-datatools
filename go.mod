@@ -1,4 +1,4 @@
-module github.com/hashicorp/terraform-provider-scaffolding-framework
+module github.com/awesomenessnil/terraform-provider-data-tools
 
 go 1.19
 
