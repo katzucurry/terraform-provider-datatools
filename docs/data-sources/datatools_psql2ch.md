@@ -14,7 +14,7 @@ Example data source
 
 ```terraform
 data "datatools_psql2ch" "example" {
-  from = [{
+  postgres_columns = [{
     name                     = "key_id"
     type                     = "int4"
     character_maximum_length = 0
@@ -24,8 +24,12 @@ data "datatools_psql2ch" "example" {
   }]
 }
 
-output "test" {
-  value = data.datatools_psql2ch.example.to
+output "ch_pk" {
+  value = data.datatools_psql2ch.example.clickhouse_primarykey
+}
+
+output "ch_columns" {
+  value = data.datatools_psql2ch.example.clickhouse_columns
 }
 ```
 
@@ -34,15 +38,16 @@ output "test" {
 
 ### Required
 
-- `from` (Attributes List) PostgreSQL to Clickhouse source PostgreSQL DDL schema (see [below for nested schema](#nestedatt--from))
+- `postgres_columns` (Attributes List) PostgreSQL to Clickhouse source PostgreSQL DDL schema (see [below for nested schema](#nestedatt--postgres_columns))
 
 ### Read-Only
 
+- `clickhouse_columns` (Attributes List) PostgreSQL columns converted to Clickhouse columns (see [below for nested schema](#nestedatt--clickhouse_columns))
+- `clickhouse_primarykey` (String) PostgreSQL column identify as primary key
 - `id` (String) PostgreSQL to Clickhouse converter identifier
-- `to` (Attributes) Clickhouse converted definition (see [below for nested schema](#nestedatt--to))
 
-<a id="nestedatt--from"></a>
-### Nested Schema for `from`
+<a id="nestedatt--postgres_columns"></a>
+### Nested Schema for `postgres_columns`
 
 Required:
 
@@ -57,16 +62,8 @@ Optional:
 - `numeric_scale` (Number) PostgreSQL numeric scale when apply
 
 
-<a id="nestedatt--to"></a>
-### Nested Schema for `to`
-
-Read-Only:
-
-- `columns` (Attributes List) PostgreSQL columns converted to Clickhouse columns (see [below for nested schema](#nestedatt--to--columns))
-- `primary_key` (String) PostgreSQL column identify as primary key
-
-<a id="nestedatt--to--columns"></a>
-### Nested Schema for `to.columns`
+<a id="nestedatt--clickhouse_columns"></a>
+### Nested Schema for `clickhouse_columns`
 
 Read-Only:
 

@@ -18,9 +18,9 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 			{
 				Config: testAccPsql2ChDataSourceConfig,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "to.primary_key", "key_id"),
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "to.columns.0.name", "key_id"),
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "to.columns.0.type", "Int8"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_primarykey", "key_id"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.name", "key_id"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int8"),
 				),
 			},
 		},
@@ -29,7 +29,7 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 
 const testAccPsql2ChDataSourceConfig = `
 data "datatools_psql2ch" "test" {
-  from = [{
+  postgres_columns = [{
 	name                     = "key_id"
 	type                     = "int4"  
 	character_maximum_length = 0

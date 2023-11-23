@@ -1,5 +1,5 @@
 data "datatools_psql2ch" "example" {
-  from = [{
+  postgres_columns = [{
     name                     = "key_id"
     type                     = "int4"
     character_maximum_length = 0
@@ -9,6 +9,10 @@ data "datatools_psql2ch" "example" {
   }]
 }
 
-output "test" {
-  value = data.datatools_psql2ch.example.to
+output "ch_pk" {
+  value = data.datatools_psql2ch.example.clickhouse_primarykey
+}
+
+output "ch_columns" {
+  value = data.datatools_psql2ch.example.clickhouse_columns
 }

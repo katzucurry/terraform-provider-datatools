@@ -27,9 +27,10 @@ type Psql2ChDataSource struct {
 
 // Psql2ChDataSourceModel describes the data source data model.
 type Psql2ChDataSourceModel struct {
-	Id   types.String          `tfsdk:"id"`
-	From []PsqlColumn          `tfsdk:"from"`
-	To   *ClickhouseDefinition `tfsdk:"to"`
+	Id                   types.String       `tfsdk:"id"`
+	PostgresColumns      []PsqlColumn       `tfsdk:"postgres_columns"`
+	ClickhousePrimaryKey types.String       `tfsdk:"clickhouse_primarykey"`
+	ClickhouseColumns    []ClickhouseColumn `tfsdk:"clickhouse_columns"`
 }
 
 type PsqlColumn struct {
@@ -39,11 +40,6 @@ type PsqlColumn struct {
 	NumericPrecision       types.Int64  `tfsdk:"numeric_precision"`
 	NumericScale           types.Int64  `tfsdk:"numeric_scale"`
 	CharacterMaximumLength types.Int64  `tfsdk:"character_maximum_length"`
-}
-
-type ClickhouseDefinition struct {
-	PrimaryKey types.String       `tfsdk:"primary_key"`
-	Columns    []ClickhouseColumn `tfsdk:"columns"`
 }
 
 type ClickhouseColumn struct {
@@ -65,7 +61,7 @@ func (d *Psql2ChDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 				MarkdownDescription: "PostgreSQL to Clickhouse converter identifier",
 				Computed:            true,
 			},
-			"from": schema.ListNestedAttribute{
+			"postgres_columns": schema.ListNestedAttribute{
 				MarkdownDescription: "PostgreSQL to Clickhouse source PostgreSQL DDL schema",
 				Required:            true,
 				NestedObject: schema.NestedAttributeObject{
@@ -97,28 +93,22 @@ func (d *Psql2ChDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 					},
 				},
 			},
-			"to": schema.SingleNestedAttribute{
-				MarkdownDescription: "Clickhouse converted definition",
+			"clickhouse_primarykey": schema.StringAttribute{
+				MarkdownDescription: "PostgreSQL column identify as primary key",
 				Computed:            true,
-				Attributes: map[string]schema.Attribute{
-					"primary_key": schema.StringAttribute{
-						MarkdownDescription: "PostgreSQL column identify as primary key",
-						Computed:            true,
-					},
-					"columns": schema.ListNestedAttribute{
-						MarkdownDescription: "PostgreSQL columns converted to Clickhouse columns",
-						Computed:            true,
-						NestedObject: schema.NestedAttributeObject{
-							Attributes: map[string]schema.Attribute{
-								"name": schema.StringAttribute{
-									MarkdownDescription: "Columns name, same as PostgreSQL",
-									Computed:            true,
-								},
-								"type": schema.StringAttribute{
-									MarkdownDescription: "PostgreSQL column type converted to Clickhouse type",
-									Computed:            true,
-								},
-							},
+			},
+			"clickhouse_columns": schema.ListNestedAttribute{
+				MarkdownDescription: "PostgreSQL columns converted to Clickhouse columns",
+				Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"name": schema.StringAttribute{
+							MarkdownDescription: "Columns name, same as PostgreSQL",
+							Computed:            true,
+						},
+						"type": schema.StringAttribute{
+							MarkdownDescription: "PostgreSQL column type converted to Clickhouse type",
+							Computed:            true,
 						},
 					},
 				},
@@ -147,7 +137,7 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	var columnNames []string
 	var clickhouseColumns []ClickhouseColumn
 	var primaryKey types.String
-	for _, column := range data.From {
+	for _, column := range data.PostgresColumns {
 		columnNames = append(columnNames, column.Name.ValueString())
 		clickhouseColumns = append(clickhouseColumns, ClickhouseColumn{
 			Name: column.Name,
@@ -161,11 +151,8 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		}
 	}
 	data.Id = types.StringValue(strings.Join(columnNames, "_"))
-
-	data.To = &ClickhouseDefinition{
-		PrimaryKey: primaryKey,
-		Columns:    clickhouseColumns,
-	}
+	data.ClickhousePrimaryKey = primaryKey
+	data.ClickhouseColumns = clickhouseColumns
 
 	// Write logs using the tflog package
 	// Documentation: https://terraform.io/plugin/log
