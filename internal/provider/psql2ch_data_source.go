@@ -40,6 +40,8 @@ type PsqlColumn struct {
 	NumericPrecision       types.Int64  `tfsdk:"numeric_precision"`
 	NumericScale           types.Int64  `tfsdk:"numeric_scale"`
 	CharacterMaximumLength types.Int64  `tfsdk:"character_maximum_length"`
+	DatetimePrecicion      types.Int64  `tfsdk:"datetime_precision"`
+	IsNullable             types.Bool   `tfsdk:"is_nullable"`
 }
 
 type ClickhouseColumn struct {
@@ -89,6 +91,14 @@ func (d *Psql2ChDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 						"character_maximum_length": schema.Int64Attribute{
 							MarkdownDescription: "PostgreSQL character length when apply",
 							Optional:            true,
+						},
+						"datetime_precision": schema.Int64Attribute{
+							MarkdownDescription: "Precison for timestamp",
+							Optional:            true,
+						},
+						"is_nullable": schema.BoolAttribute{
+							MarkdownDescription: "True if the column is nullable",
+							Required:            true,
 						},
 					},
 				},
@@ -141,10 +151,12 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		columnNames = append(columnNames, column.Name.ValueString())
 		clickhouseColumns = append(clickhouseColumns, ClickhouseColumn{
 			Name: column.Name,
-			Type: types.StringValue(postgreSQLToClickhouseType(
+			Type: types.StringValue(postgreSqlToClickhouseType(
 				column.Type.ValueString(),
 				column.NumericPrecision.ValueInt64(),
-				column.NumericScale.ValueInt64())),
+				column.NumericScale.ValueInt64(),
+				column.DatetimePrecicion.ValueInt64(),
+			)),
 		})
 		if column.IsPrimaryKey.ValueBool() {
 			primaryKey = column.Name
@@ -162,7 +174,7 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func postgreSQLToClickhouseType(psqlType string, numericPrecision int64, numericScale int64) string {
+func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numericScale int64, datetimePrecicion int64) string {
 	clickhouseType := ""
 	switch psqlType {
 	case "int4":
@@ -172,7 +184,7 @@ func postgreSQLToClickhouseType(psqlType string, numericPrecision int64, numeric
 	case "varchar":
 		clickhouseType = "String"
 	case "timestamp":
-		clickhouseType = "DateTime"
+		clickhouseType = fmt.Sprintf("DateTime64(%d)", datetimePrecicion)
 	default:
 		clickhouseType = "String"
 	}

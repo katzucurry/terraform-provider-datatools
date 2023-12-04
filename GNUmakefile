@@ -1,10 +1,10 @@
 OS            := $(shell go env GOOS)
 ARCH          := $(shell go env GOARCH)
 GO_FILES      := $(shell find . -type f -name '*.go')
-HOSTNAME=hashicorp.com
-NAMESPACE=awesomenessnil
+HOSTNAME=registry.terraform.io
+NAMESPACE=hashicorp
 NAME=datatools
-VERSION=0.1.0
+VERSION := $(shell git tag --sort=committerdate | grep -E '[0-9]' | tail -1 | cut -b 2-7)
 PLUGIN_PATH   ?= ${HOME}/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS}_${ARCH}
 PLUGIN_NAME   := terraform-provider-${NAME}
 DIST_PATH     := dist/${OS}_${ARCH}

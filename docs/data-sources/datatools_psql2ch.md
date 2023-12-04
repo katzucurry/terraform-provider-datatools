@@ -51,6 +51,7 @@ output "ch_columns" {
 
 Required:
 
+- `is_nullable` (Boolean) True if the column is nullable
 - `is_primary_key` (Boolean) PostgreSQL is primary key boolean
 - `name` (String) PostgreSQL Column name
 - `type` (String) PostgreSQL Column type
@@ -58,6 +59,7 @@ Required:
 Optional:
 
 - `character_maximum_length` (Number) PostgreSQL character length when apply
+- `datetime_precision` (Number) Precison for timestamp
 - `numeric_precision` (Number) PostgreSQL numeric precision when apply
 - `numeric_scale` (Number) PostgreSQL numeric scale when apply
 
