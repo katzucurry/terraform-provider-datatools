@@ -178,7 +178,7 @@ func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numeric
 	clickhouseType := ""
 	switch psqlType {
 	case "int4":
-		clickhouseType = "Int8"
+		clickhouseType = "Int"
 	case "numeric":
 		clickhouseType = fmt.Sprintf("Decimal(%d, %d)", numericPrecision, numericScale)
 	case "varchar":

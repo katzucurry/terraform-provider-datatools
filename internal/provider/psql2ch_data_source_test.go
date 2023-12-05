@@ -20,7 +20,7 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_primarykey", "key_id"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.name", "key_id"),
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int8"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int"),
 				),
 			},
 		},
