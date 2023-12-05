@@ -20,7 +20,7 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_primarykey", "key_id"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.name", "key_id"),
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Nullable(Int)"),
 				),
 			},
 		},
@@ -37,7 +37,7 @@ data "datatools_psql2ch" "test" {
 	numeric_precision        = 32
 	numeric_scale            = 0
 	datetime_precision       = 0
-	is_nullable 			 = false
+	is_nullable 			 = true
   }]
 }
 `
