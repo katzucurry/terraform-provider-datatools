@@ -202,8 +202,14 @@ func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numeric
 		clickhouseType = "String"
 	case "timestamp":
 		clickhouseType = fmt.Sprintf("DateTime64(%d)", datetimePrecicion)
+	case "date":
+		clickhouseType = "Date"
+	case "float4":
+		clickhouseType = "Float32"
+	case "float8":
+		clickhouseType = "Float64"
 	default:
-		clickhouseType = "NotImplementType!"
+		clickhouseType = "NotImplementedType!"
 	}
 	if isNullable {
 		clickhouseType = "Nullable(" + clickhouseType + ")"
