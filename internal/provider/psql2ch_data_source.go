@@ -191,16 +191,19 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numericScale int64, datetimePrecicion int64, isNullable bool) string {
 	clickhouseType := ""
 	switch psqlType {
-	case "int4":
+	case "int4", "int8":
 		clickhouseType = "Int"
 	case "numeric":
+		if numericPrecision == 0 {
+			numericPrecision = 76
+		}
 		clickhouseType = fmt.Sprintf("Decimal(%d, %d)", numericPrecision, numericScale)
 	case "varchar":
 		clickhouseType = "String"
 	case "timestamp":
 		clickhouseType = fmt.Sprintf("DateTime64(%d)", datetimePrecicion)
 	default:
-		clickhouseType = "String"
+		clickhouseType = "NotImplementType!"
 	}
 	if isNullable {
 		clickhouseType = "Nullable(" + clickhouseType + ")"
