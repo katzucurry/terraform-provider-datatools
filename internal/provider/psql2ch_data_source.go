@@ -27,10 +27,11 @@ type Psql2ChDataSource struct {
 
 // Psql2ChDataSourceModel describes the data source data model.
 type Psql2ChDataSourceModel struct {
-	Id                   types.String       `tfsdk:"id"`
-	PostgresColumns      []PsqlColumn       `tfsdk:"postgres_columns"`
-	ClickhousePrimaryKey types.String       `tfsdk:"clickhouse_primarykey"`
-	ClickhouseColumns    []ClickhouseColumn `tfsdk:"clickhouse_columns"`
+	Id                          types.String       `tfsdk:"id"`
+	PostgresColumns             []PsqlColumn       `tfsdk:"postgres_columns"`
+	ClickhousePrimaryKey        types.String       `tfsdk:"clickhouse_primarykey"`
+	ClickhouseGuessedPrimaryKey types.String       `tfsdk:"clickhouse_guessed_primarykey"`
+	ClickhouseColumns           []ClickhouseColumn `tfsdk:"clickhouse_columns"`
 }
 
 type PsqlColumn struct {
@@ -107,6 +108,10 @@ func (d *Psql2ChDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 				MarkdownDescription: "PostgreSQL column identify as primary key",
 				Computed:            true,
 			},
+			"clickhouse_guessed_primarykey": schema.StringAttribute{
+				MarkdownDescription: "PostgreSQL column guessed as primary key",
+				Computed:            true,
+			},
 			"clickhouse_columns": schema.ListNestedAttribute{
 				MarkdownDescription: "PostgreSQL columns converted to Clickhouse columns",
 				Computed:            true,
@@ -147,10 +152,12 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	var columnNames []string
 	var clickhouseColumns []ClickhouseColumn
 	var primaryKey types.String
+	var guessedPrimaryKey *types.String
 	for _, column := range data.PostgresColumns {
-		columnNames = append(columnNames, column.Name.ValueString())
+		columnName := column.Name
+		columnNames = append(columnNames, columnName.ValueString())
 		clickhouseColumns = append(clickhouseColumns, ClickhouseColumn{
-			Name: column.Name,
+			Name: columnName,
 			Type: types.StringValue(postgreSqlToClickhouseType(
 				column.Type.ValueString(),
 				column.NumericPrecision.ValueInt64(),
@@ -160,11 +167,17 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 			)),
 		})
 		if column.IsPrimaryKey.ValueBool() {
-			primaryKey = column.Name
+			primaryKey = columnName
+		}
+		if strings.HasSuffix(columnName.ValueString(), "_id") && guessedPrimaryKey == nil {
+			guessedPrimaryKey = &columnName
 		}
 	}
 	data.Id = types.StringValue(strings.Join(columnNames, "_"))
 	data.ClickhousePrimaryKey = primaryKey
+	if guessedPrimaryKey != nil {
+		data.ClickhouseGuessedPrimaryKey = *guessedPrimaryKey
+	}
 	data.ClickhouseColumns = clickhouseColumns
 
 	// Write logs using the tflog package
