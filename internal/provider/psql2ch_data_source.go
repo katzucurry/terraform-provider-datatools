@@ -198,7 +198,7 @@ func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numeric
 			numericPrecision = 76
 		}
 		clickhouseType = fmt.Sprintf("Decimal(%d, %d)", numericPrecision, numericScale)
-	case "varchar":
+	case "varchar", "text":
 		clickhouseType = "String"
 	case "timestamp":
 		clickhouseType = fmt.Sprintf("DateTime64(%d)", datetimePrecicion)
@@ -208,6 +208,8 @@ func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numeric
 		clickhouseType = "Float32"
 	case "float8":
 		clickhouseType = "Float64"
+	case "bool":
+		clickhouseType = "Bool"
 	default:
 		clickhouseType = "NotImplementedType!"
 	}
