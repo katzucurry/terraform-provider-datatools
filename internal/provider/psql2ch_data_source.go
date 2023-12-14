@@ -164,6 +164,7 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 				column.NumericScale.ValueInt64(),
 				column.DatetimePrecicion.ValueInt64(),
 				column.IsNullable.ValueBool(),
+				column.IsPrimaryKey.ValueBool(),
 			)),
 		})
 		if column.IsPrimaryKey.ValueBool() {
@@ -188,7 +189,7 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numericScale int64, datetimePrecicion int64, isNullable bool) string {
+func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numericScale int64, datetimePrecicion int64, isNullable bool, isPrimaryKey bool) string {
 	clickhouseType := ""
 	switch psqlType {
 	case "int4", "int8":
@@ -213,7 +214,7 @@ func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numeric
 	default:
 		clickhouseType = "NotImplementedType!"
 	}
-	if isNullable {
+	if isNullable && !isPrimaryKey {
 		clickhouseType = "Nullable(" + clickhouseType + ")"
 	}
 	return clickhouseType
