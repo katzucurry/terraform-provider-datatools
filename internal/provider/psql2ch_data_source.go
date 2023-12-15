@@ -195,8 +195,10 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numericScale int64, datetimePrecicion int64, isNullable bool, isPrimaryKey bool, isGuessedPrimaryKey bool) string {
 	clickhouseType := ""
 	switch psqlType {
-	case "int4", "int8":
-		clickhouseType = "Int"
+	case "int4":
+		clickhouseType = "Int32"
+	case "int8":
+		clickhouseType = "Int64"
 	case "numeric":
 		if numericPrecision == 0 {
 			numericPrecision = 76

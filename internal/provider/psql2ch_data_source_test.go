@@ -20,7 +20,7 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_primarykey", "key"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.name", "key"),
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int32"),
 				),
 			},
 			// Case2
@@ -29,7 +29,7 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_primarykey", "key_id"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.name", "key_id"),
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int32"),
 				),
 			},
 			// Case3
@@ -38,7 +38,7 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_primarykey", "key_id"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.name", "key_id"),
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int32"),
 				),
 			},
 			// Bug in Dev with table in shop database product_history_change
@@ -47,8 +47,8 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_guessed_primarykey", "phc_id"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.name", "phc_id"),
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int"),
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.1.type", "Nullable(Int)"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int64"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.1.type", "Nullable(Int64)"),
 				),
 			},
 		},
