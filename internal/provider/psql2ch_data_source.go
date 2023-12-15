@@ -153,8 +153,8 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	var clickhouseColumns []ClickhouseColumn
 	var primaryKey types.String
 	var guessedPrimaryKey *types.String
-	isGuessedPrimaryKey := false
 	for _, column := range data.PostgresColumns {
+		isGuessedPrimaryKey := false
 		columnName := column.Name
 		columnNames = append(columnNames, columnName.ValueString())
 		if column.IsPrimaryKey.ValueBool() {
