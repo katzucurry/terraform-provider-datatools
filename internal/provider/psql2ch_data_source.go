@@ -217,7 +217,7 @@ func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numeric
 	default:
 		clickhouseType = "NotImplementedType!"
 	}
-	if isNullable && (!isPrimaryKey || !isGuessedPrimaryKey) {
+	if isNullable && !isPrimaryKey && !isGuessedPrimaryKey {
 		clickhouseType = "Nullable(" + clickhouseType + ")"
 	}
 	return clickhouseType
