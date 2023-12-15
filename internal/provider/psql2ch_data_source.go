@@ -153,9 +153,17 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	var clickhouseColumns []ClickhouseColumn
 	var primaryKey types.String
 	var guessedPrimaryKey *types.String
+	isGuessedPrimaryKey := false
 	for _, column := range data.PostgresColumns {
 		columnName := column.Name
 		columnNames = append(columnNames, columnName.ValueString())
+		if column.IsPrimaryKey.ValueBool() {
+			primaryKey = columnName
+		}
+		if strings.HasSuffix(columnName.ValueString(), "_id") && guessedPrimaryKey == nil {
+			guessedPrimaryKey = &columnName
+			isGuessedPrimaryKey = true
+		}
 		clickhouseColumns = append(clickhouseColumns, ClickhouseColumn{
 			Name: columnName,
 			Type: types.StringValue(postgreSqlToClickhouseType(
@@ -165,14 +173,9 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 				column.DatetimePrecicion.ValueInt64(),
 				column.IsNullable.ValueBool(),
 				column.IsPrimaryKey.ValueBool(),
+				isGuessedPrimaryKey,
 			)),
 		})
-		if column.IsPrimaryKey.ValueBool() {
-			primaryKey = columnName
-		}
-		if strings.HasSuffix(columnName.ValueString(), "_id") && guessedPrimaryKey == nil {
-			guessedPrimaryKey = &columnName
-		}
 	}
 	data.Id = types.StringValue(strings.Join(columnNames, "_"))
 	data.ClickhousePrimaryKey = primaryKey
@@ -189,7 +192,7 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numericScale int64, datetimePrecicion int64, isNullable bool, isPrimaryKey bool) string {
+func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numericScale int64, datetimePrecicion int64, isNullable bool, isPrimaryKey bool, isGuessedPrimaryKey bool) string {
 	clickhouseType := ""
 	switch psqlType {
 	case "int4", "int8":
@@ -214,7 +217,7 @@ func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numeric
 	default:
 		clickhouseType = "NotImplementedType!"
 	}
-	if isNullable && !isPrimaryKey {
+	if isNullable && (!isPrimaryKey || !isGuessedPrimaryKey) {
 		clickhouseType = "Nullable(" + clickhouseType + ")"
 	}
 	return clickhouseType
