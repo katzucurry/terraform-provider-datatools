@@ -198,8 +198,6 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 			Name: columnName,
 			Type: types.StringValue(postgreSqlToKafkaEngineClickhouseType(
 				column.Type.ValueString(),
-				column.NumericPrecision.ValueInt64(),
-				column.NumericScale.ValueInt64(),
 				column.DatetimePrecicion.ValueInt64(),
 				column.IsNullable.ValueBool(),
 				column.IsPrimaryKey.ValueBool(),
@@ -256,7 +254,7 @@ func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numeric
 	return clickhouseType
 }
 
-func postgreSqlToKafkaEngineClickhouseType(psqlType string, numericPrecision int64, numericScale int64, datetimePrecicion int64, isNullable bool, isPrimaryKey bool, isGuessedPrimaryKey bool) string {
+func postgreSqlToKafkaEngineClickhouseType(psqlType string, datetimePrecicion int64, isNullable bool, isPrimaryKey bool, isGuessedPrimaryKey bool) string {
 	clickhouseType := ""
 	switch psqlType {
 	case "int4":
@@ -264,10 +262,6 @@ func postgreSqlToKafkaEngineClickhouseType(psqlType string, numericPrecision int
 	case "int8":
 		clickhouseType = "Int64"
 	case "numeric":
-		if numericPrecision == 0 {
-			numericPrecision = 76
-		}
-		clickhouseType = fmt.Sprintf("Decimal(%d, %d)", numericPrecision, numericScale)
 	case "varchar", "text", "bpchar":
 		clickhouseType = "String"
 	case "timestamp":
