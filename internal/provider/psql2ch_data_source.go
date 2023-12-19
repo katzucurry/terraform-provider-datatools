@@ -262,6 +262,7 @@ func postgreSqlToKafkaEngineClickhouseType(psqlType string, datetimePrecicion in
 	case "int8":
 		clickhouseType = "Int64"
 	case "numeric":
+		clickhouseType = "String"
 	case "varchar", "text", "bpchar":
 		clickhouseType = "String"
 	case "timestamp":
