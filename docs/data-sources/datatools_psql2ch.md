@@ -44,6 +44,7 @@ output "ch_columns" {
 
 - `clickhouse_columns` (Attributes List) PostgreSQL columns converted to Clickhouse columns (see [below for nested schema](#nestedatt--clickhouse_columns))
 - `clickhouse_guessed_primarykey` (String) PostgreSQL column guessed as primary key
+- `clickhouse_kafkaengine_columns` (Attributes List) PostgreSQL columns converted to Clickhouse columns (see [below for nested schema](#nestedatt--clickhouse_kafkaengine_columns))
 - `clickhouse_primarykey` (String) PostgreSQL column identify as primary key
 - `id` (String) PostgreSQL to Clickhouse converter identifier
 
@@ -67,6 +68,15 @@ Optional:
 
 <a id="nestedatt--clickhouse_columns"></a>
 ### Nested Schema for `clickhouse_columns`
+
+Read-Only:
+
+- `name` (String) Columns name, same as PostgreSQL
+- `type` (String) PostgreSQL column type converted to Clickhouse type
+
+
+<a id="nestedatt--clickhouse_kafkaengine_columns"></a>
+### Nested Schema for `clickhouse_kafkaengine_columns`
 
 Read-Only:
 

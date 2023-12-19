@@ -27,11 +27,12 @@ type Psql2ChDataSource struct {
 
 // Psql2ChDataSourceModel describes the data source data model.
 type Psql2ChDataSourceModel struct {
-	Id                          types.String       `tfsdk:"id"`
-	PostgresColumns             []PsqlColumn       `tfsdk:"postgres_columns"`
-	ClickhousePrimaryKey        types.String       `tfsdk:"clickhouse_primarykey"`
-	ClickhouseGuessedPrimaryKey types.String       `tfsdk:"clickhouse_guessed_primarykey"`
-	ClickhouseColumns           []ClickhouseColumn `tfsdk:"clickhouse_columns"`
+	Id                           types.String       `tfsdk:"id"`
+	PostgresColumns              []PsqlColumn       `tfsdk:"postgres_columns"`
+	ClickhousePrimaryKey         types.String       `tfsdk:"clickhouse_primarykey"`
+	ClickhouseGuessedPrimaryKey  types.String       `tfsdk:"clickhouse_guessed_primarykey"`
+	ClickhouseColumns            []ClickhouseColumn `tfsdk:"clickhouse_columns"`
+	ClickhouseKafkaEngineColumns []ClickhouseColumn `tfsdk:"clickhouse_kafkaengine_columns"`
 }
 
 type PsqlColumn struct {
@@ -128,6 +129,22 @@ func (d *Psql2ChDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 					},
 				},
 			},
+			"clickhouse_kafkaengine_columns": schema.ListNestedAttribute{
+				MarkdownDescription: "PostgreSQL columns converted to Clickhouse columns",
+				Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"name": schema.StringAttribute{
+							MarkdownDescription: "Columns name, same as PostgreSQL",
+							Computed:            true,
+						},
+						"type": schema.StringAttribute{
+							MarkdownDescription: "PostgreSQL column type converted to Clickhouse type",
+							Computed:            true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -151,6 +168,7 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 
 	var columnNames []string
 	var clickhouseColumns []ClickhouseColumn
+	var clickhouseKafkaEngineColumns []ClickhouseColumn
 	var primaryKey types.String
 	var guessedPrimaryKey *types.String
 	for _, column := range data.PostgresColumns {
@@ -176,6 +194,18 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 				isGuessedPrimaryKey,
 			)),
 		})
+		clickhouseKafkaEngineColumns = append(clickhouseKafkaEngineColumns, ClickhouseColumn{
+			Name: columnName,
+			Type: types.StringValue(postgreSqlToKafkaEngineClickhouseType(
+				column.Type.ValueString(),
+				column.NumericPrecision.ValueInt64(),
+				column.NumericScale.ValueInt64(),
+				column.DatetimePrecicion.ValueInt64(),
+				column.IsNullable.ValueBool(),
+				column.IsPrimaryKey.ValueBool(),
+				isGuessedPrimaryKey,
+			)),
+		})
 	}
 	data.Id = types.StringValue(strings.Join(columnNames, "_"))
 	data.ClickhousePrimaryKey = primaryKey
@@ -183,6 +213,7 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		data.ClickhouseGuessedPrimaryKey = *guessedPrimaryKey
 	}
 	data.ClickhouseColumns = clickhouseColumns
+	data.ClickhouseKafkaEngineColumns = clickhouseKafkaEngineColumns
 
 	// Write logs using the tflog package
 	// Documentation: https://terraform.io/plugin/log
@@ -208,6 +239,41 @@ func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numeric
 		clickhouseType = "String"
 	case "timestamp", "timestamptz":
 		clickhouseType = fmt.Sprintf("DateTime64(%d)", datetimePrecicion)
+	case "date":
+		clickhouseType = "Date"
+	case "float4":
+		clickhouseType = "Float32"
+	case "float8":
+		clickhouseType = "Float64"
+	case "bool":
+		clickhouseType = "Bool"
+	default:
+		clickhouseType = "NotImplementedType!"
+	}
+	if isNullable && !isPrimaryKey && !isGuessedPrimaryKey {
+		clickhouseType = "Nullable(" + clickhouseType + ")"
+	}
+	return clickhouseType
+}
+
+func postgreSqlToKafkaEngineClickhouseType(psqlType string, numericPrecision int64, numericScale int64, datetimePrecicion int64, isNullable bool, isPrimaryKey bool, isGuessedPrimaryKey bool) string {
+	clickhouseType := ""
+	switch psqlType {
+	case "int4":
+		clickhouseType = "Int32"
+	case "int8":
+		clickhouseType = "Int64"
+	case "numeric":
+		if numericPrecision == 0 {
+			numericPrecision = 76
+		}
+		clickhouseType = fmt.Sprintf("Decimal(%d, %d)", numericPrecision, numericScale)
+	case "varchar", "text", "bpchar":
+		clickhouseType = "String"
+	case "timestamp":
+		clickhouseType = fmt.Sprintf("DateTime64(%d)", datetimePrecicion)
+	case "timestamptz":
+		clickhouseType = "String"
 	case "date":
 		clickhouseType = "Date"
 	case "float4":
