@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -27,12 +28,13 @@ type Psql2ChDataSource struct {
 
 // Psql2ChDataSourceModel describes the data source data model.
 type Psql2ChDataSourceModel struct {
-	Id                           types.String       `tfsdk:"id"`
-	PostgresColumns              []PsqlColumn       `tfsdk:"postgres_columns"`
-	ClickhousePrimaryKey         types.String       `tfsdk:"clickhouse_primarykey"`
-	ClickhouseGuessedPrimaryKey  types.String       `tfsdk:"clickhouse_guessed_primarykey"`
-	ClickhouseColumns            []ClickhouseColumn `tfsdk:"clickhouse_columns"`
-	ClickhouseKafkaEngineColumns []ClickhouseColumn `tfsdk:"clickhouse_kafkaengine_columns"`
+	Id                                  types.String       `tfsdk:"id"`
+	PostgresColumns                     []PsqlColumn       `tfsdk:"postgres_columns"`
+	ClickhousePrimaryKey                types.String       `tfsdk:"clickhouse_primarykey"`
+	ClickhouseGuessedPrimaryKey         types.String       `tfsdk:"clickhouse_guessed_primarykey"`
+	ClickhouseColumns                   []ClickhouseColumn `tfsdk:"clickhouse_columns"`
+	ClickhouseKafkaEngineColumns        []ClickhouseColumn `tfsdk:"clickhouse_kafkaengine_columns"`
+	ClickhouseKafkaEngineColumnsMapping types.List         `tfsdk:"clickhouse_kafkaengine_columns_mapping"`
 }
 
 type PsqlColumn struct {
@@ -145,6 +147,11 @@ func (d *Psql2ChDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 					},
 				},
 			},
+			"clickhouse_kafkaengine_columns_mapping": schema.ListAttribute{
+				MarkdownDescription: "Mapping between kafka engine with avroconfluent format to clickhouse base types",
+				Computed:            true,
+				ElementType:         types.StringType,
+			},
 		},
 	}
 }
@@ -169,6 +176,7 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	var columnNames []string
 	var clickhouseColumns []ClickhouseColumn
 	var clickhouseKafkaEngineColumns []ClickhouseColumn
+	var clickhouseKafkaEngineColumnsMapping []attr.Value
 	var primaryKey types.String
 	var guessedPrimaryKey *types.String
 	for _, column := range data.PostgresColumns {
@@ -204,6 +212,7 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 				isGuessedPrimaryKey,
 			)),
 		})
+		clickhouseKafkaEngineColumnsMapping = append(clickhouseKafkaEngineColumnsMapping, mappingKafkaEngineTypes(columnName.ValueString(), column.Type.ValueString()))
 	}
 	data.Id = types.StringValue(strings.Join(columnNames, "_"))
 	data.ClickhousePrimaryKey = primaryKey
@@ -212,7 +221,11 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	}
 	data.ClickhouseColumns = clickhouseColumns
 	data.ClickhouseKafkaEngineColumns = clickhouseKafkaEngineColumns
-
+	clickhouseKafkaEngineColumnsMappingValues, diags := types.ListValue(types.StringType, clickhouseKafkaEngineColumnsMapping)
+	if diags.HasError() {
+		return
+	}
+	data.ClickhouseKafkaEngineColumnsMapping = clickhouseKafkaEngineColumnsMappingValues
 	// Write logs using the tflog package
 	// Documentation: https://terraform.io/plugin/log
 	tflog.Trace(ctx, "read a data source")
@@ -285,4 +298,15 @@ func postgreSqlToKafkaEngineClickhouseType(psqlType string, datetimePrecicion in
 		clickhouseType = "Nullable(" + clickhouseType + ")"
 	}
 	return clickhouseType
+}
+
+func mappingKafkaEngineTypes(name string, psqlType string) types.String {
+	expression := ""
+	switch psqlType {
+	case "timestamptz":
+		expression = "parseDateTime64BestEffortOrNull(`" + name + "`)"
+	default:
+		expression = "`" + name + "`"
+	}
+	return types.StringValue(expression)
 }
