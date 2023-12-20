@@ -304,7 +304,7 @@ func mappingKafkaEngineTypes(name string, psqlType string) types.String {
 	expression := ""
 	switch psqlType {
 	case "timestamptz":
-		expression = "parseDateTime64BestEffortOrNull(`" + name + "`)"
+		expression = "parseDateTime64BestEffortOrNull(`" + name + "`) as `" + name + "`"
 	default:
 		expression = "`" + name + "`"
 	}
