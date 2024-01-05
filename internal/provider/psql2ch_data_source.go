@@ -190,17 +190,25 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 			guessedPrimaryKey = &columnName
 			isGuessedPrimaryKey = true
 		}
+		err, clickhouseType := postgreSqlToClickhouseType(
+			column.Type.ValueString(),
+			column.NumericPrecision.ValueInt64(),
+			column.NumericScale.ValueInt64(),
+			column.DatetimePrecicion.ValueInt64(),
+			column.IsNullable.ValueBool(),
+			column.IsPrimaryKey.ValueBool(),
+			isGuessedPrimaryKey,
+		)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to map PostgreSQL type",
+				"An unexpected error occurred when mapping type: "+err.Error(),
+			)
+			return
+		}
 		clickhouseColumns = append(clickhouseColumns, ClickhouseColumn{
 			Name: columnName,
-			Type: types.StringValue(postgreSqlToClickhouseType(
-				column.Type.ValueString(),
-				column.NumericPrecision.ValueInt64(),
-				column.NumericScale.ValueInt64(),
-				column.DatetimePrecicion.ValueInt64(),
-				column.IsNullable.ValueBool(),
-				column.IsPrimaryKey.ValueBool(),
-				isGuessedPrimaryKey,
-			)),
+			Type: types.StringValue(clickhouseType),
 		})
 		clickhouseKafkaEngineColumns = append(clickhouseKafkaEngineColumns, ClickhouseColumn{
 			Name: columnName,
@@ -234,7 +242,16 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numericScale int64, datetimePrecicion int64, isNullable bool, isPrimaryKey bool, isGuessedPrimaryKey bool) string {
+type NotImplementedType struct {
+	PSQLType string
+}
+
+func (e *NotImplementedType) Error() string {
+	return fmt.Sprintf("Type %s not implemented yet", e.PSQLType)
+}
+
+func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numericScale int64, datetimePrecicion int64, isNullable bool, isPrimaryKey bool, isGuessedPrimaryKey bool) (error, string) {
+	var err error
 	clickhouseType := ""
 	switch psqlType {
 	case "int4":
@@ -243,8 +260,8 @@ func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numeric
 		clickhouseType = "Int64"
 	case "numeric":
 		if numericPrecision == 0 {
-			numericPrecision = 67
-			numericScale = 9
+			numericPrecision = 38
+			numericScale = 19
 		}
 		clickhouseType = fmt.Sprintf("Decimal(%d, %d)", numericPrecision, numericScale)
 	case "varchar", "text", "bpchar":
@@ -260,12 +277,14 @@ func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numeric
 	case "bool":
 		clickhouseType = "Bool"
 	default:
-		clickhouseType = "NotImplementedType!"
+		err = &NotImplementedType{
+			PSQLType: psqlType,
+		}
 	}
 	if isNullable && !isPrimaryKey && !isGuessedPrimaryKey {
 		clickhouseType = "Nullable(" + clickhouseType + ")"
 	}
-	return clickhouseType
+	return err, clickhouseType
 }
 
 func postgreSqlToKafkaEngineClickhouseType(psqlType string, datetimePrecicion int64, isNullable bool, isPrimaryKey bool, isGuessedPrimaryKey bool) string {
