@@ -252,8 +252,10 @@ func (e *NotImplementedType) Error() string {
 
 func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numericScale int64, datetimePrecicion int64, isNullable bool, isPrimaryKey bool, isGuessedPrimaryKey bool) (error, string) {
 	var err error
-	clickhouseType := ""
+	var clickhouseType string
 	switch psqlType {
+	case "int2":
+		clickhouseType = "Int16"
 	case "int4":
 		clickhouseType = "Int32"
 	case "int8":
@@ -280,6 +282,7 @@ func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numeric
 		err = &NotImplementedType{
 			PSQLType: psqlType,
 		}
+		return err, clickhouseType
 	}
 	if isNullable && !isPrimaryKey && !isGuessedPrimaryKey {
 		clickhouseType = "Nullable(" + clickhouseType + ")"
@@ -290,6 +293,8 @@ func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numeric
 func postgreSqlToKafkaEngineClickhouseType(psqlType string, datetimePrecicion int64, isNullable bool, isPrimaryKey bool, isGuessedPrimaryKey bool) string {
 	clickhouseType := ""
 	switch psqlType {
+	case "int2":
+		clickhouseType = "Int16"
 	case "int4":
 		clickhouseType = "Int32"
 	case "int8":
