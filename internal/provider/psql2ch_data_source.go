@@ -177,17 +177,18 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	var clickhouseColumns []ClickhouseColumn
 	var clickhouseKafkaEngineColumns []ClickhouseColumn
 	var clickhouseKafkaEngineColumnsMapping []attr.Value
-	var primaryKey types.String
+	var primaryKey []string
 	var guessedPrimaryKey *types.String
 	for _, column := range data.PostgresColumns {
 		isGuessedPrimaryKey := false
 		columnName := column.Name
 		columnNames = append(columnNames, columnName.ValueString())
 		if column.IsPrimaryKey.ValueBool() {
-			primaryKey = columnName
+			primaryKey = append(primaryKey, "\""+columnName.ValueString()+"\"")
 		}
 		if strings.HasSuffix(columnName.ValueString(), "_id") && guessedPrimaryKey == nil {
-			guessedPrimaryKey = &columnName
+			guessedPrimaryKeyColumnName := types.StringValue("(\"" + columnName.ValueString() + "\")")
+			guessedPrimaryKey = &guessedPrimaryKeyColumnName
 			isGuessedPrimaryKey = true
 		}
 		err, clickhouseType := postgreSqlToClickhouseType(
@@ -223,7 +224,7 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		clickhouseKafkaEngineColumnsMapping = append(clickhouseKafkaEngineColumnsMapping, mappingKafkaEngineTypes(columnName.ValueString(), column.Type.ValueString()))
 	}
 	data.Id = types.StringValue(strings.Join(columnNames, "_"))
-	data.ClickhousePrimaryKey = primaryKey
+	data.ClickhousePrimaryKey = types.StringValue("(" + strings.Join(primaryKey, ",") + ")")
 	if guessedPrimaryKey != nil {
 		data.ClickhouseGuessedPrimaryKey = *guessedPrimaryKey
 	}
