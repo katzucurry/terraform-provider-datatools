@@ -18,7 +18,7 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 			{
 				Config: testAccPsql2ChDataSourceConfigCase1,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_primarykey", "(\"key\")"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_primarykey.0", "key"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.name", "key"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int32"),
 				),
@@ -27,7 +27,7 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 			{
 				Config: testAccPsql2ChDataSourceConfigCase2,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_primarykey", "(\"key_id\")"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_primarykey.0", "key_id"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.name", "key_id"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int32"),
 				),
@@ -36,7 +36,8 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 			{
 				Config: testAccPsql2ChDataSourceConfigCase3,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_primarykey", "(\"key_id\",\"key2_id\")"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_primarykey.0", "key_id"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_primarykey.1", "key2_id"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.name", "key_id"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int32"),
 				),
@@ -45,7 +46,7 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 			{
 				Config: testAccBugDevProductHistoryChangeTable,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_guessed_primarykey", "(\"phc_id\")"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_guessed_primarykey", "phc_id"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.name", "phc_id"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int64"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.1.type", "Nullable(Int64)"),
