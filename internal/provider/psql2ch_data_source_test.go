@@ -46,7 +46,7 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 			{
 				Config: testAccBugDevProductHistoryChangeTable,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_guessed_primarykey", "phc_id"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_guessed_primarykey.0", "phc_id"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.name", "phc_id"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.0.type", "Int64"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.1.type", "Nullable(Int64)"),
