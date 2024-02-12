@@ -52,6 +52,19 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "clickhouse_columns.1.type", "Nullable(Int64)"),
 				),
 			},
+			{
+				Config: testAccPsql2ChDataSourceConfigCaseClickhouseToAthena1,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "athena_columns.0.name", "key_id"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "athena_columns.0.type", "int"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "athena_columns.1.name", "key2_id"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "athena_columns.1.type", "int"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "athena_columns.2.name", "key3_id"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "athena_columns.2.type", "decimal(32,0)"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "athena_columns.3.name", "key_date"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "athena_columns.3.type", "timestamp"),
+				),
+			},
 		},
 	})
 }
@@ -239,4 +252,49 @@ data "datatools_psql2ch" "test" {
 	}]
   }
   
+`
+const testAccPsql2ChDataSourceConfigCaseClickhouseToAthena1 = `
+data "datatools_psql2ch" "test" {
+	postgres_columns = [{
+		name                     = "key_id"
+		type                     = "int4"  
+		character_maximum_length = 0
+		is_primary_key           = true
+		numeric_precision        = 32
+		numeric_scale            = 0
+		datetime_precision       = 0
+		is_nullable 			 = false
+	  }, {
+		name                     = "key2_id"
+		type                     = "int4"  
+		character_maximum_length = 0
+		is_primary_key           = true
+		numeric_precision        = 32
+		numeric_scale            = 0
+		datetime_precision       = 0
+		is_nullable 			 = false
+	  },
+	  {
+		name                     = "key3_id"
+		type                     = "numeric"  
+		character_maximum_length = 0
+		is_primary_key           = true
+		numeric_precision        = 32
+		numeric_scale            = 0
+		datetime_precision       = 0
+		is_nullable 			 = false
+	  },
+	  
+	  {
+		name                     = "key_date"
+		type                     = "timestamp"  
+		character_maximum_length = 0
+		is_primary_key           = true
+		numeric_precision        = 32
+		numeric_scale            = 0
+		datetime_precision       = 0
+		is_nullable 			 = false
+	  }
+	  ]
+}
 `
