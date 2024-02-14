@@ -1,4 +1,4 @@
-module github.com/awesomenessnil/terraform-provider-data-tools
+module github.com/awesomenessnil/terraform-provider-datatools
 
 go 1.19
 
