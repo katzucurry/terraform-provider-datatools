@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -35,6 +36,7 @@ type Psql2ChDataSourceModel struct {
 	ClickhouseColumns                   []ClickhouseColumn `tfsdk:"clickhouse_columns"`
 	ClickhouseKafkaEngineColumns        []ClickhouseColumn `tfsdk:"clickhouse_kafkaengine_columns"`
 	ClickhouseKafkaEngineColumnsMapping types.List         `tfsdk:"clickhouse_kafkaengine_columns_mapping"`
+	AthenaColumns                       []AthenaColumn     `tfsdk:"athena_columns"`
 }
 
 type PsqlColumn struct {
@@ -50,6 +52,13 @@ type PsqlColumn struct {
 
 type ClickhouseColumn struct {
 	Name types.String `tfsdk:"name"`
+	Type types.String `tfsdk:"type"`
+}
+
+type AthenaColumn struct {
+	Comment types.String `tfsdk:"comment"`
+	Name    types.String `tfsdk:"name"`
+	//Parameters types.Map    `tfsdk:"parameters"`
 	Type types.String `tfsdk:"type"`
 }
 
@@ -154,6 +163,30 @@ func (d *Psql2ChDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 				Computed:            true,
 				ElementType:         types.StringType,
 			},
+			"athena_columns": schema.ListNestedAttribute{
+				MarkdownDescription: "Clickhouse to AThena PostgreSQL DDL schema",
+				Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"comment": schema.StringAttribute{
+							MarkdownDescription: "Athena column comment",
+							Optional:            true,
+						},
+						"name": schema.StringAttribute{
+							MarkdownDescription: "Athena Column name",
+							Required:            true,
+						},
+						/* "parameters": schema.MapAttribute{
+							MarkdownDescription: "Athena column parameters",
+							Optional:            true,
+						}, */
+						"type": schema.StringAttribute{
+							MarkdownDescription: "Athena column type",
+							Optional:            true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -224,6 +257,13 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		})
 		clickhouseKafkaEngineColumnsMapping = append(clickhouseKafkaEngineColumnsMapping, mappingKafkaEngineTypes(columnName.ValueString(), column.Type.ValueString()))
 	}
+	var athenaColumns []AthenaColumn
+	for _, column := range clickhouseColumns {
+		athenaColumns = append(athenaColumns, AthenaColumn{
+			Name: types.StringValue(column.Name.ValueString()),
+			Type: types.StringValue(clickhouseToAthena(column.Type.ValueString())),
+		})
+	}
 	data.Id = types.StringValue(strings.Join(columnNames, "_"))
 	data.ClickhousePrimaryKey = primaryKey
 	if guessedPrimaryKey != nil {
@@ -236,6 +276,7 @@ func (d *Psql2ChDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 	data.ClickhouseKafkaEngineColumnsMapping = clickhouseKafkaEngineColumnsMappingValues
+	data.AthenaColumns = athenaColumns
 	// Write logs using the tflog package
 	// Documentation: https://terraform.io/plugin/log
 	tflog.Trace(ctx, "read a data source")
@@ -335,4 +376,46 @@ func mappingKafkaEngineTypes(name string, psqlType string) types.String {
 		expression = "`" + name + "`"
 	}
 	return types.StringValue(expression)
+}
+
+func clickhouseToAthena(clichouseType string) string {
+	athenaType := ""
+	switch {
+	case clichouseType == "Int16":
+		athenaType = "int"
+	case clichouseType == "Int32":
+		athenaType = "int"
+	case clichouseType == "Int64":
+		athenaType = "int"
+	case clichouseType == "String":
+		athenaType = "string"
+	case regexp.MustCompile(`Decimal\((\d+)(?:,\s*(\d+))?\)`).MatchString(clichouseType):
+		re := regexp.MustCompile(`Decimal\((\d+)(?:,\s*(\d+))?\)`)
+		matches := re.FindStringSubmatch(clichouseType)
+		if len(matches) > 2 {
+			precision := matches[1]
+			scale := matches[2]
+			athenaType = fmt.Sprintf("decimal(%s,%s)", precision, scale)
+
+		} else if len(matches) > 1 {
+			precision := matches[1]
+			athenaType = fmt.Sprintf("decimal(%s)", precision)
+		} else {
+			athenaType = "NotImplementedType!"
+		}
+	case regexp.MustCompile(`DateTime64\(\d+\)`).MatchString(clichouseType):
+		athenaType = "timestamp"
+	case clichouseType == "Date":
+		athenaType = "date"
+	case clichouseType == "Float32":
+		athenaType = "float"
+	case clichouseType == "Float64":
+		athenaType = "float"
+	case clichouseType == "Bool":
+		athenaType = "boolean"
+	default:
+		athenaType = "NotImplementedType!"
+	}
+	return athenaType
+
 }
