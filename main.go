@@ -8,7 +8,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/awesomenessnil/terraform-provider-data-tools/internal/provider"
+	"github.com/awesomenessnil/terraform-provider-datatools/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
