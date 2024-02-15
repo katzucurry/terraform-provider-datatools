@@ -56,9 +56,7 @@ type ClickhouseColumn struct {
 }
 
 type AthenaColumn struct {
-	Comment types.String `tfsdk:"comment"`
-	Name    types.String `tfsdk:"name"`
-	//Parameters types.Map    `tfsdk:"parameters"`
+	Name types.String `tfsdk:"name"`
 	Type types.String `tfsdk:"type"`
 }
 
@@ -164,22 +162,14 @@ func (d *Psql2ChDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 				ElementType:         types.StringType,
 			},
 			"athena_columns": schema.ListNestedAttribute{
-				MarkdownDescription: "Clickhouse to AThena PostgreSQL DDL schema",
+				MarkdownDescription: "Clickhouse to Athena PostgreSQL DDL schema",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"comment": schema.StringAttribute{
-							MarkdownDescription: "Athena column comment",
-							Optional:            true,
-						},
 						"name": schema.StringAttribute{
 							MarkdownDescription: "Athena Column name",
 							Required:            true,
 						},
-						/* "parameters": schema.MapAttribute{
-							MarkdownDescription: "Athena column parameters",
-							Optional:            true,
-						}, */
 						"type": schema.StringAttribute{
 							MarkdownDescription: "Athena column type",
 							Optional:            true,
@@ -334,7 +324,7 @@ func postgreSqlToClickhouseType(psqlType string, numericPrecision int64, numeric
 }
 
 func postgreSqlToKafkaEngineClickhouseType(psqlType string, datetimePrecicion int64, isNullable bool, isPrimaryKey bool, isGuessedPrimaryKey bool) string {
-	clickhouseType := ""
+	var clickhouseType string
 	switch psqlType {
 	case "int2":
 		clickhouseType = "Int16"
@@ -368,7 +358,7 @@ func postgreSqlToKafkaEngineClickhouseType(psqlType string, datetimePrecicion in
 }
 
 func mappingKafkaEngineTypes(name string, psqlType string) types.String {
-	expression := ""
+	var expression string
 	switch psqlType {
 	case "timestamptz":
 		expression = "parseDateTime64BestEffortOrNull(`" + name + "`) as `" + name + "`"
@@ -379,7 +369,7 @@ func mappingKafkaEngineTypes(name string, psqlType string) types.String {
 }
 
 func clickhouseToAthena(clichouseType string) string {
-	athenaType := ""
+	var athenaType string
 	switch {
 	case clichouseType == "Int16":
 		athenaType = "int"

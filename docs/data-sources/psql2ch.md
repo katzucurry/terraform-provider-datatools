@@ -42,7 +42,7 @@ output "ch_columns" {
 
 ### Read-Only
 
-- `athena_columns` (Attributes List) Clickhouse to AThena PostgreSQL DDL schema (see [below for nested schema](#nestedatt--athena_columns))
+- `athena_columns` (Attributes List) Clickhouse to Athena PostgreSQL DDL schema (see [below for nested schema](#nestedatt--athena_columns))
 - `clickhouse_columns` (Attributes List) PostgreSQL columns converted to Clickhouse columns (see [below for nested schema](#nestedatt--clickhouse_columns))
 - `clickhouse_guessed_primarykey` (List of String) PostgreSQL column guessed as primary key
 - `clickhouse_kafkaengine_columns` (Attributes List) PostgreSQL columns converted to Clickhouse columns (see [below for nested schema](#nestedatt--clickhouse_kafkaengine_columns))
@@ -77,7 +77,6 @@ Required:
 
 Optional:
 
-- `comment` (String) Athena column comment
 - `type` (String) Athena column type
 
 
