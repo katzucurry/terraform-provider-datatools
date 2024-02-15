@@ -294,7 +294,7 @@ data "datatools_psql2ch" "test" {
 		numeric_precision        = 32
 		numeric_scale            = 0
 		datetime_precision       = 0
-		is_nullable 			 = false
+		is_nullable 			 = true
 	  }
 	  ]
 }

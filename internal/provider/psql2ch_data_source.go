@@ -369,6 +369,12 @@ func mappingKafkaEngineTypes(name string, psqlType string) types.String {
 }
 
 func clickhouseToAthena(clichouseType string) string {
+	nullable := regexp.MustCompile(`Nullable\(.+\)`)
+	if nullable.MatchString(clichouseType) {
+		clichouseType = nullable.ReplaceAllString(clichouseType, "")
+	}
+	decimalPS := regexp.MustCompile(`Decimal\((?P<Precision>\d+), (?P<Scale>\d+)\)`)
+	decimalP := regexp.MustCompile(`Decimal\((?P<Precision>\d+)\)`)
 	var athenaType string
 	switch {
 	case clichouseType == "Int16":
@@ -379,20 +385,15 @@ func clickhouseToAthena(clichouseType string) string {
 		athenaType = "int"
 	case clichouseType == "String":
 		athenaType = "string"
-	case regexp.MustCompile(`Decimal\((\d+)(?:,\s*(\d+))?\)`).MatchString(clichouseType):
-		re := regexp.MustCompile(`Decimal\((\d+)(?:,\s*(\d+))?\)`)
-		matches := re.FindStringSubmatch(clichouseType)
-		if len(matches) > 2 {
-			precision := matches[1]
-			scale := matches[2]
-			athenaType = fmt.Sprintf("decimal(%s,%s)", precision, scale)
-
-		} else if len(matches) > 1 {
-			precision := matches[1]
-			athenaType = fmt.Sprintf("decimal(%s)", precision)
-		} else {
-			athenaType = "NotImplementedType!"
-		}
+	case decimalPS.MatchString(clichouseType):
+		matches := decimalPS.FindStringSubmatch(clichouseType)
+		precision := matches[decimalPS.SubexpIndex("Precision")]
+		scale := matches[decimalPS.SubexpIndex("Scale")]
+		athenaType = fmt.Sprintf("decimal(%s,%s)", precision, scale)
+	case decimalP.MatchString(clichouseType):
+		matches := decimalP.FindStringSubmatch(clichouseType)
+		precision := matches[decimalP.SubexpIndex("Precision")]
+		athenaType = fmt.Sprintf("decimal(%s)", precision)
 	case regexp.MustCompile(`DateTime64\(\d+\)`).MatchString(clichouseType):
 		athenaType = "timestamp"
 	case clichouseType == "Date":
