@@ -64,6 +64,8 @@ func TestAccPsql2ChDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "athena_columns.2.type", "decimal(32,0)"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "athena_columns.3.name", "key_date"),
 					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "athena_columns.3.type", "timestamp"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "athena_columns.4.name", "key_nullable_int8"),
+					resource.TestCheckResourceAttr("data.datatools_psql2ch.test", "athena_columns.4.type", "int"),
 				),
 			},
 		},
@@ -285,13 +287,22 @@ data "datatools_psql2ch" "test" {
 		datetime_precision       = 0
 		is_nullable 			 = false
 	  },
-	  
 	  {
 		name                     = "key_date"
 		type                     = "timestamp"  
 		character_maximum_length = 0
 		is_primary_key           = true
 		numeric_precision        = 32
+		numeric_scale            = 0
+		datetime_precision       = 0
+		is_nullable 			 = true
+	  },
+	  {
+		name                     = "key_nullable_int8"
+		type                     = "int8"  
+		character_maximum_length = 0
+		is_primary_key           = false
+		numeric_precision        = 0
 		numeric_scale            = 0
 		datetime_precision       = 0
 		is_nullable 			 = true
