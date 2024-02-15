@@ -369,9 +369,10 @@ func mappingKafkaEngineTypes(name string, psqlType string) types.String {
 }
 
 func clickhouseToAthena(clichouseType string) string {
-	nullable := regexp.MustCompile(`Nullable\(.+\)`)
+	nullable := regexp.MustCompile(`Nullable\((?P<Type>.+)\)`)
 	if nullable.MatchString(clichouseType) {
-		clichouseType = nullable.ReplaceAllString(clichouseType, "")
+		matches := nullable.FindStringSubmatch(clichouseType)
+		clichouseType = matches[nullable.SubexpIndex("Type")]
 	}
 	decimalPS := regexp.MustCompile(`Decimal\((?P<Precision>\d+), (?P<Scale>\d+)\)`)
 	decimalP := regexp.MustCompile(`Decimal\((?P<Precision>\d+)\)`)
